@@ -1,0 +1,80 @@
+## Connect to your server ##
+
+mkdir /exports
+sudo /exports
+mkdir backup
+mkdir documents
+
+sudo apt install nfs-kernel-server
+systemctl status nfs-kernel-server
+( Configure Files in Nfs-server) 
+cat /etc/exports
+sudo mv /etc/exports /etc/exports.orig
+
+nano /etc/exports 
+### Code for exports in nfs server
+/exports/backup 10.10.10.0/255.255.255.0(rw,no_subtree_check)
+/exports/documents 10.10.10.0/255.255.255.0(rw,no_subtree_check)
+
+systemctl restart nfs-kernel-server
+systemctl status nfs-kernel-server
+
+cd /exports
+sudo nano backup/test1.txt
+## Code test1.txt
+Hello World From NFS
+
+CONNECT IN THE CLIENTS SERVERS
+
+sudo apt install nfs-common
+(Get IP of server NFS doing : "ip addr show " ) 
+(The command bellow will show list of directories that are beaing shared)
+showmount --exports IP_OF_SERVER  
+
+sudo mkdir /mnt/nfs
+sudo mkdir /mnt/nfs/backup
+sudo mkdir /mnt/nfs/documents
+( How we can mount directory exports in our server? )
+sudo mount IP_OF_SERVER:/exports/backup /mnt/nfs/backup 
+sudo mount IP_OF_SERVER:/exports/documents /mnt/nfs/documents
+
+
+(How we can umount the directories?)
+sudo umount /mnt/nfs/backup
+sudo umount /mnt/nfs/documents
+
+(How mount in demand autofs?)
+
+cd /mnt/nfs
+df -h (verify if not have nothing already mounted,if you rum rm command in mounted dir you will lose the content, first umount directory)
+rm -r backup documents
+cd 
+sudo apt install autofs
+systemctl status autofs
+sudo nano /etc/auto.master
+( In end line you add configuration in file)
+## This code in final of file /etc/auto.master
+/mnt/nfs /etc/auto.nfs --ghost --timeout=60 
+
+(Edite other file)
+sudo nano /etc/auto.nfs
+# Put this code bellow
+backup -fstype=nfs4, rw IP_OF_SERVER:/exports/backup
+documents -fstype=nfs4, rw IP_OF_SERVER:/exports/documents
+
+systemctl restart autofs
+systemctl status autofs
+ls -l /mnt/nfs  ( This command will pool information and trigger mount nfs)
+dh -h
+
+
+
+
+
+
+
+
+
+
+
+
