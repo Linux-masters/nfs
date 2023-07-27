@@ -1,0 +1,88 @@
+
+# Parent direct for NFS shares and subdirectories
+/exports
+cd /exports
+mkdir backup
+mkdir documents
+
+# Now install Packages
+sudo apt install nfs-kernel-server
+systemctl status nfs-kernel-server
+
+# Create a fresh one exports configuration  
+cat /etc/exports
+mv /etc/exports /etc/exports.orig
+nano /etc/exports
+#Put this in the exports file for nfs Server
+/exports/backup IP_SERVER_CLIENTS/Subnet_IP (rw,no_subtree_check)
+/exports/documents IP_SERVER_CLIENTS/Subnet_IP (rw,no_subtree_check)
+# Restar the services 
+systemctl restart nfs-kernel-server
+# Test Files and server service
+cd /exports 
+nano /backup/text1.txt 
+nano /documents/text2.txt
+
+# Connect other Client server
+
+apt install nfs-common
+showmount
+# Get IP of IP_OF_SERVER_NFS
+ip addr show
+# Back to client 
+showmount  --exports IP_OF_SERVER_NFS 
+
+# Create Share directories in Client
+mkdir /mnt/nfs
+mkdir /mnt/nfs/backup
+mkdir /mnt/nfs/documents
+
+# Mount client NFS EXPORT
+sudo mount IP_OF_SERVER_NFS:/exports/backup /mnt/nfs/backup
+sudo mount IP_OF_SERVER_NFS:/exports/documents /mnt/nfs/documents
+cat /mnt/nfs/backup/text1.txt
+
+# Umount client NFS EXPORT
+sudo umount /mnt/nfs/backup
+sudo umount /mnt/nfs/backup
+
+# Mount NFS in on demand Works better and only with autofs
+# Unmount directories and Remove Directories that not have any thing mounted with are mounnted first unmount
+sudo rm -r backup documents
+
+# Install autofs
+apt install autofs
+systemctl status autofs
+
+# Configure
+nano /etc/auto.master
+# Use this configuration bellow in the final of file ( --ghost make sure the files exist in mount location)
+/mnt/nfs/ /etc/auto.nfs --ghost --timeout=60 
+
+# Edit next file this is Configuration (rw = read and Writte) serverIP:/loaction_of_server
+nano /etc/auto.nfs
+backup -fstype=nfs4, rw IP_OF_SERVER_NFS:/exports/backup
+documents -fstype=nfs4, rw IP_OF_SERVER_NFS:/exports/documents
+
+# This is First files read by nfs Auto 
+tail -n 1 /etc/auto.master ( here give where read and conf of consistance)
+cat /etc/auto.nfs  ( This file configuration where will be mounted) 
+systemct restart autonfs 
+ls -l /mnt/nfs/documents ( If liest sub_directories just that will be mounted)
+df -h 
+ls -l /mnt/nfs   ( just list base directories and atomaticly mount the server) after 60 seconds 
+df -h 
+# Verify what happen
+watch "mount | grep nfs"
+
+
+# Video https://www.youtube.com/watch?v=zmDIfJtCKCk
+
+
+
+
+
+
+
+
+
